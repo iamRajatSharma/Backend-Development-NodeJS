@@ -13,13 +13,20 @@ app.get("/", (req, res) => {
 // fetch all data
 app.get("/fetchAllData", async (req, res) => {
     try {
-        let data = await Users.find({})
-        if (data.length > 0) {
-            return res.send({ "message": "Record Fetched Successfully", "count": data.length, "data": data })
+        const validateToken = jwt.verify(req.headers.bearer, JWT_TOKEN)
+        if (validateToken) {
+            let data = await Users.find({})
+            if (data.length > 0) {
+                return res.send({ "message": "Record Fetched Successfully", "count": data.length, "data": data })
+            }
+            else {
+                return res.status(200).json({ "message": "No Data Found" })
+            }
         }
         else {
-            return res.status(200).json({ "message": "No Data Found" })
+            return res.status(200).json({ "message": "Authorization Failed" })
         }
+
     }
     catch (error) {
         return res.status(500).json(error)
@@ -29,13 +36,20 @@ app.get("/fetchAllData", async (req, res) => {
 // fetch single data
 app.get("/fetchSingleData/:id", async (req, res) => {
     try {
-        let data = await Users.findOne({ _id: req.params.id })
-        if (data) {
-            return res.status(200).json({ "message": "Record Fetched Successfully", data })
+        const validateToken = jwt.verify(req.headers.bearer, JWT_TOKEN)
+        if (validateToken) {
+            let data = await Users.findOne({ _id: req.params.id })
+            if (data) {
+                return res.status(200).json({ "message": "Record Fetched Successfully", data })
+            }
+            else {
+                return res.status(200).json({ "message": "No Data Found" })
+            }
         }
         else {
-            return res.status(200).json({ "message": "No Data Found" })
+            return res.status(200).json({ "message": "Authorization Failed" })
         }
+
     }
     catch (error) {
         return res.status(500).json(error)
@@ -45,8 +59,15 @@ app.get("/fetchSingleData/:id", async (req, res) => {
 // delete single data
 app.get("/deleteSingleData/:id", async (req, res) => {
     try {
-        let data = await Users.deleteOne({ _id: req.params.id })
-        return res.send({ "message": "Record Deleted Successfully", data })
+        const validateToken = jwt.verify(req.headers.bearer, JWT_TOKEN)
+        if (validateToken) {
+            let data = await Users.deleteOne({ _id: req.params.id })
+            return res.send({ "message": "Record Deleted Successfully", data })
+        }
+        else {
+            return res.status(200).json({ "message": "Authorization Failed" })
+        }
+
     }
     catch (error) {
         return res.status(500).json(error)
@@ -56,23 +77,30 @@ app.get("/deleteSingleData/:id", async (req, res) => {
 // save new user
 app.post("/saveUser", async (req, res) => {
     try {
-        const checkUser = await Users.findOne({ "email": req.body.email })
-        if (checkUser) {
-            return res.status(200).json({ "message": "User Already Exists" })
-        }
-        const data = {
-            name: req.body.name,
-            email: req.body.email,
-            password: await encryptDecrypt.encrypt(req.body.password)
-        }
-        let result = await new Users(data)
-        result = await result.save()
-        if (result) {
-            return res.status(200).json({ "message": "User Saved Successfully", result })
+        const validateToken = jwt.verify(req.headers.bearer, JWT_TOKEN)
+        if (validateToken) {
+            const checkUser = await Users.findOne({ "email": req.body.email })
+            if (checkUser) {
+                return res.status(200).json({ "message": "User Already Exists" })
+            }
+            const data = {
+                name: req.body.name,
+                email: req.body.email,
+                password: await encryptDecrypt.encrypt(req.body.password)
+            }
+            let result = await new Users(data)
+            result = await result.save()
+            if (result) {
+                return res.status(200).json({ "message": "User Saved Successfully", result })
+            }
+            else {
+                return res.status(401).json({ "message": "Something Wrong" })
+            }
         }
         else {
-            return res.status(401).json({ "message": "Something Wrong" })
+            return res.status(200).json({ "message": "Authorization Failed" })
         }
+
     }
     catch (error) {
         return res.status(500).json(error)
@@ -108,7 +136,7 @@ app.post("/dashboard", async (req, res) => {
     try {
         const validateToken = jwt.verify(req.headers.bearer, JWT_TOKEN)
         if (validateToken) {
-            return res.status(200).json({ "message": "Authorization Successfull","data":"Data Fetched" })
+            return res.status(200).json({ "message": "Authorization Successfull", "data": "Data Fetched" })
         }
         else {
             return res.status(200).json({ "message": "Authorization Failed" })
@@ -119,7 +147,7 @@ app.post("/dashboard", async (req, res) => {
     }
 })
 
-
+// url not found
 app.get("/*", (req, res) => {
     res.status(404).json({ "message": "The URL you lookin is not found" })
 })
