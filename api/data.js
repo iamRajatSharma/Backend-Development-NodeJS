@@ -2,8 +2,7 @@ const express = require("express")
 const app = express.Router();
 const Users = require("../models/Users")
 const encryptDecrypt = require("../server/encrypt")
-const jwt = require("jsonwebtoken")
-const JWT_TOKEN = "!@#$%^&*()_+1234567890-="
+const token = require("../server/token")
 
 // home api message
 app.get("/", (req, res) => {
@@ -13,20 +12,19 @@ app.get("/", (req, res) => {
 // fetch all data
 app.get("/fetchAllData", async (req, res) => {
     try {
-        const validateToken = jwt.verify(req.headers.bearer, JWT_TOKEN)
+        const validateToken = token.verifyToken(req.headers.bearer)
         if (validateToken) {
             let data = await Users.find({})
             if (data.length > 0) {
                 return res.send({ "message": "Record Fetched Successfully", "count": data.length, "data": data })
             }
             else {
-                return res.status(200).json({ "message": "No Data Found" })
+                return res.status(400).json({ "message": "No Data Found" })
             }
         }
         else {
             return res.status(200).json({ "message": "Authorization Failed" })
         }
-
     }
     catch (error) {
         return res.status(500).json(error)
@@ -36,7 +34,7 @@ app.get("/fetchAllData", async (req, res) => {
 // fetch single data
 app.get("/fetchSingleData/:id", async (req, res) => {
     try {
-        const validateToken = jwt.verify(req.headers.bearer, JWT_TOKEN)
+        const validateToken = token.verifyToken(req.headers.bearer)
         if (validateToken) {
             let data = await Users.findOne({ _id: req.params.id })
             if (data) {
@@ -59,7 +57,7 @@ app.get("/fetchSingleData/:id", async (req, res) => {
 // delete single data
 app.get("/deleteSingleData/:id", async (req, res) => {
     try {
-        const validateToken = jwt.verify(req.headers.bearer, JWT_TOKEN)
+        const validateToken = token.verifyToken(req.headers.bearer)
         if (validateToken) {
             let data = await Users.deleteOne({ _id: req.params.id })
             return res.send({ "message": "Record Deleted Successfully", data })
@@ -77,7 +75,7 @@ app.get("/deleteSingleData/:id", async (req, res) => {
 // save new user
 app.post("/saveUser", async (req, res) => {
     try {
-        const validateToken = jwt.verify(req.headers.bearer, JWT_TOKEN)
+        const validateToken = token.verifyToken(req.headers.bearer)
         if (validateToken) {
             const checkUser = await Users.findOne({ "email": req.body.email })
             if (checkUser) {
@@ -118,8 +116,8 @@ app.post("/login", async (req, res) => {
 
         const checkpassword = await encryptDecrypt.decrypt(req.body.password, checkUser.password)
         if (checkpassword) {
-            const token = jwt.sign(checkUser.email, JWT_TOKEN)
-            return res.status(200).json({ "message": "Logged in Successfully", token, checkUser })
+            const userToken = token.generateToken(checkUser.email)
+            return res.status(200).json({ "message": "Logged in Successfully", userToken, checkUser })
         }
         else {
             return res.status(404).json({ "message": "Password Not Matched" })
@@ -134,7 +132,7 @@ app.post("/login", async (req, res) => {
 // display dashboard route
 app.post("/dashboard", async (req, res) => {
     try {
-        const validateToken = jwt.verify(req.headers.bearer, JWT_TOKEN)
+        const validateToken = token.verifyToken(req.headers.bearer)
         if (validateToken) {
             return res.status(200).json({ "message": "Authorization Successfull", "data": "Data Fetched" })
         }
