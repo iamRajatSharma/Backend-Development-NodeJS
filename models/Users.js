@@ -14,6 +14,11 @@ const UserSchema = mongoose.Schema({
         type: String,
         required: true,
         trim: true
+    },
+    mobile: {
+        type: String,
+        require: true,
+        trim: true
     }
 })
 
