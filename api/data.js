@@ -10,7 +10,7 @@ const OTPModel = require("../models/Otp")
 
 // home api message
 app.get("/", (req, res) => {
-    return res.status(200).json("Servering is working")
+    return res.status(200).json({ message: "Servering is working" })
 })
 
 // fetch all data
@@ -75,7 +75,7 @@ app.get("/deleteSingleData/:id", async (req, res) => {
 })
 
 // save new user
-app.post("/saveUser", async (req, res) => {
+app.post("/user", async (req, res) => {
     try {
         const checkUser = await Users.findOne({ "email": req.body.email })
         if (checkUser) {
@@ -90,7 +90,7 @@ app.post("/saveUser", async (req, res) => {
         let result = await new Users(data)
         result = await result.save()
         if (result) {
-            return res.status(200).json({ "message": "User Saved Successfully", result })
+            return res.status(200).json({ "message": "User Saved Successfully", result: result._id })
         }
         else {
             return res.status(401).json({ "message": "Something Wrong" })
@@ -112,8 +112,13 @@ app.post("/login", async (req, res) => {
 
         const checkpassword = await encryptDecrypt.decrypt(req.body.password, checkUser.password)
         if (checkpassword) {
+            const details = {
+                name: checkUser.name,
+                email: checkUser.email,
+                mobile: checkUser.mobile
+            }
             const userToken = token.generateToken(checkUser.email)
-            return res.status(200).json({ "message": "Logged in Successfully", userToken, checkUser })
+            return res.status(200).json({ "message": "Logged in Successfully", userToken, details })
         }
         else {
             return res.status(404).json({ "message": "Password Not Matched" })
